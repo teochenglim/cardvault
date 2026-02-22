@@ -131,6 +131,42 @@ curl http://localhost:8080/health
 | `--uploads-dir` | `CARDVAULT_UPLOADS` | `uploads/` | Photo storage dir |
 | `--seed` | — | false | Load seed data on first run |
 
+## Size Comparison
+
+Measured on Apple Silicon (macOS). Docker images target `linux/amd64` via `alpine:3.20` / `python:3.11-slim-bookworm`.
+
+| | Go | Rust | Python |
+|---|---|---|---|
+| **Native binary** | 14 MB | 4.2 MB | — |
+| **Docker image** | 10.9 MB | 8.9 MB | 61.8 MB |
+| **Docker base** | `alpine:3.20` | `alpine:3.20` | `python:3.11-slim` |
+| **Single binary** | ✓ | ✓ | ✗ (`.venv`) |
+| **CGO required** | No | Yes (bundled SQLite) | No |
+| **Static files** | embedded (`go:embed`) | embedded (`rust-embed`) → extracted at startup | copied into image |
+
+> Go native binary is unstripped (macOS dev build). The Docker Linux binary with `-ldflags="-s -w"` is ~3 MB. Rust binary has `strip = true` in `Cargo.toml`. Python has no native binary — runtime ships as a virtualenv.
+
+## Docker
+
+```bash
+# Build
+docker build -t cardvault-go     ./go
+docker build -t cardvault-python  ./python
+docker build -t cardvault-rust    ./rust
+
+# Run (each on a different port)
+docker run -d -p 8080:8080 --name cardvault-go     cardvault-go  /app/cardvault --seed
+docker run -d -p 8081:8080 --name cardvault-python  cardvault-python python main.py --seed
+docker run -d -p 8082:8080 --name cardvault-rust    cardvault-rust /app/cardvault --seed
+
+# Stop & remove
+docker stop cardvault-go     && docker rm cardvault-go
+docker stop cardvault-python && docker rm cardvault-python
+docker stop cardvault-rust   && docker rm cardvault-rust
+```
+
+> Data lives in anonymous Docker volumes (declared via `VOLUME` in each Dockerfile) and survives restarts. Add `-v cv-data:/app/data -v cv-uploads:/app/uploads` for named volumes that persist across `docker rm`.
+
 ## Implementations
 
 See each subfolder for language-specific build and run instructions:

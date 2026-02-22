@@ -1,0 +1,7 @@
+target/
+cardvault.db
+uploads/
+static/
+*.db
+.git
+README.md

@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+cardvault.db
+uploads/
+*.db
+.git
+dist/
+build/
+README.md

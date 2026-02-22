@@ -1,0 +1,6 @@
+cardvault
+cardvault.db
+uploads/
+*.db
+.git
+README.md

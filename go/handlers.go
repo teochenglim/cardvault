@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -52,6 +53,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.handleTags(lrw, r)
 	case strings.HasPrefix(path, "/uploads/"):
 		h.handleUploads(lrw, r)
+	case strings.HasPrefix(path, "/static/"):
+		subFS, err := fs.Sub(staticFiles, "static")
+		if err != nil {
+			http.Error(lrw, "internal error", http.StatusInternalServerError)
+			return
+		}
+		http.StripPrefix("/static/", http.FileServer(http.FS(subFS))).ServeHTTP(lrw, r)
 	default:
 		// Serve index.html for everything else (SPA)
 		serveIndex(lrw, r)

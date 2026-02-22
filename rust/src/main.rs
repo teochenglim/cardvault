@@ -13,11 +13,12 @@ use clap::Parser;
 use handlers::AppState;
 use rust_embed::RustEmbed;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 #[derive(RustEmbed)]
-#[folder = "static/"]
+#[folder = "src/static/"]
 pub struct Asset;
 
 #[derive(Parser, Debug)]
@@ -65,6 +66,15 @@ async fn main() -> Result<()> {
     // Ensure uploads directory exists
     tokio::fs::create_dir_all(&cli.uploads_dir).await?;
 
+    // Extract embedded static files to ./static/ next to the binary
+    let static_dir = std::path::PathBuf::from("static");
+    tokio::fs::create_dir_all(&static_dir).await?;
+    for path in Asset::iter() {
+        if let Some(content) = Asset::get(&path) {
+            tokio::fs::write(static_dir.join(path.as_ref()), content.data).await?;
+        }
+    }
+
     let state = Arc::new(AppState {
         conn,
         uploads_dir: cli.uploads_dir.clone(),
@@ -79,6 +89,8 @@ async fn main() -> Result<()> {
     let app = Router::new()
         // Index
         .route("/", get(handlers::serve_index))
+        // Static assets (CSS, JS) — served from extracted temp dir
+        .nest_service("/static", ServeDir::new(&static_dir))
         // Uploads
         .route("/uploads/{filename}", get(handlers::serve_uploads))
         // Health

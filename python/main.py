@@ -18,6 +18,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 import store as db_store
 from models import Card, TagCount, HealthResponse, PhoneInput, EmailInput, AddressInput
@@ -92,6 +93,9 @@ def get_db() -> aiosqlite.Connection:
 # Determine static dir — works both when run directly and via PyInstaller
 _here = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
 _static_dir = _here / "static"
+
+# Serve CSS, JS, and other static assets at /static/
+app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
