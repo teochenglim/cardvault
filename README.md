@@ -4,6 +4,8 @@ A business card management application implemented in three languages — **Go**
 
 Each implementation produces a self-contained server with an embedded SQLite database and a single-page web UI.
 
+![Card Vault UI](images/cardvault.png)
+
 ## Project Structure
 
 ```
